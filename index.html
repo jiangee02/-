@@ -245,7 +245,7 @@
       .stats-panel .title { margin-bottom: 2px !important; gap: 4px !important; }
       .stats-panel h2 { font-size: clamp(9px, 2.4vw, 11px) !important; margin: 0 !important; }
       .stats-panel .title button { padding: 2px 6px !important; font-size: 9px !important; border-radius: 6px !important; }
-      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(2, 1fr) !important; margin-top: 2px !important; }
+      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(1, 1fr) !important; margin-top: 2px !important; }
       .stats-panel .stat .label { font-size: 7px !important; }
       .stats-panel .stat .value { font-size: clamp(9px, 2.2vw, 11px) !important; }
       /* 图标按钮（暂停）：紧凑 */
@@ -260,7 +260,9 @@
         font-size: clamp(14px, 1.1vw, 18px) !important;
       }
       /* 重新开始/触发按钮贴住最下面 */
-      .footer-controls { bottom: 2px !important; gap: 8px; }
+      .footer-controls { bottom: 0 !important; gap: 8px; }
+      /* 疲劳/黄条整体上移，回头时不挡屠夫模型 */
+      .skill-widget { top: 40% !important; }
       .mobile-controls { align-self: flex-end; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
