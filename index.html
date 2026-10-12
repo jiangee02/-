@@ -227,7 +227,7 @@
     @media (max-width: 800px) {
       /* 顶栏：左右并排但收紧成窄条（fit-content），不占满全屏；中央留给判定文字 */
       .topbar { flex-direction: row; gap: 4px; justify-content: space-between; align-items: flex-start; }
-      .topbar > .panel { width: fit-content; max-width: 52%; margin: 0; flex: 0 0 auto; position: relative; }
+      .topbar > .panel { width: fit-content; max-width: 52%; margin: 0; flex: 0 0 auto; }
       .topbar > .stats-panel { width: fit-content; max-width: 42%; margin: 0; flex: 0 0 auto; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
@@ -237,7 +237,7 @@
       /* 左栏：隐藏标题，标题行清空塌缩；难度行顶到最上 */
       .panel h1 { display: none !important; }
       .panel .title { margin: 0 !important; min-height: 0 !important; gap: 0 !important; }
-      .panel .title-tools { position: absolute; top: calc(100% + 4px); left: 0; }
+      .panel .title-tools { position: absolute; top: calc(100% + 4px); right: 0; left: auto; }
       .difficulty-row { gap: 3px !important; margin-top: 0 !important; }
       .difficulty-row button { padding: 3px 6px !important; font-size: clamp(9px, 2.2vw, 11px) !important; }
       .difficulty-note { font-size: clamp(7px, 1.8vw, 9px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 2px !important; }
@@ -266,8 +266,11 @@
       }
       /* 重新开始/触发按钮贴住最下面 */
       .footer-controls { bottom: 0 !important; gap: 8px; }
-      /* 疲劳/黄条整体上移到暂停按钮下方，留一点距离 */
-      .skill-widget { top: 18% !important; }
+      /* 疲劳/黄条整体上移到暂停按钮下方，留一点距离；整体缩小 */
+      .skill-widget { top: 18% !important; gap: 6px !important; }
+      .fatigue-ring { width: clamp(42px, 5vw, 54px) !important; height: clamp(42px, 5vw, 54px) !important; }
+      .fatigue-ring .fatigue-icon { font-size: clamp(16px, 2vw, 22px) !important; }
+      .deadhard-bar { width: clamp(44px, 5.5vw, 60px) !important; height: 8px !important; }
       .mobile-controls { align-self: flex-end; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
