@@ -479,6 +479,9 @@
       // 骗刀动作放慢倍数（举刀+停顿+收回整体时长 ×3.6，hitAt 判定点不变；调大更慢）
       feint: { windupMult: 3.6 },
 
+      // 轻刀：固定不分难度；抬手快(88ms)下劈延长(210ms)，总298ms，够目压反应
+      light: { raiseMs: 88, swingMs: 210 },
+
       // ===== 追逐声 / 钢筋黄条 =====
       chaseVolume: 0.45,     // 追逐循环正常音量
       chaseDimVolume: 0.30,  // 成功/被骗后"拉远"渐弱到的音量（保持播放不停止）
@@ -725,7 +728,7 @@
       deadhardCharge: 0,  // 钢筋黄条电量（0~1）：成功才充能，按住回头时消退
       chaseDimmed: false, // 追逐声是否处于"拉远"渐弱状态（成功/被骗后）
       screenShake: { x: 0, y: 0, intensity: 0, duration: 0, until: 0 }, idleClock: 0,
-      stats: { totalAttempts: 0, successCount: 0, failCount: 0, feintedCount: 0, currentStreak: 0, bestStreak: 0, reactionSum: 0, reactionCount: 0, lastReactionTime: 0 }
+      stats: { totalAttempts: 0, successCount: 0, failCount: 0, feintedCount: 0, currentStreak: 0, bestStreak: 0, reactionSum: 0, reactionCount: 0, lastReactionTime: null }
     };
 
     function getDifficultyConfig(name) {
@@ -810,7 +813,7 @@
     }
 
     function resetStats() {
-      Object.assign(game.stats, { totalAttempts: 0, successCount: 0, failCount: 0, feintedCount: 0, currentStreak: 0, bestStreak: 0, reactionSum: 0, reactionCount: 0, lastReactionTime: 0 });
+      Object.assign(game.stats, { totalAttempts: 0, successCount: 0, failCount: 0, feintedCount: 0, currentStreak: 0, bestStreak: 0, reactionSum: 0, reactionCount: 0, lastReactionTime: null });
       updateHud(); setMessage("统计已清空", "重新记录。", "#f8fafc", 900);
     }
 
@@ -836,16 +839,27 @@
       const isFeint = attackType === "feint";
       const isCharged = attackType === "charged";
       // 蓄力刀：前摇更长，前半圈（举刀）占比更大；骗刀：整体动作放慢（feint.windupMult）
-      const windupTime = isCharged ? game.tuning.windupTime * CONFIG.charged.windupMult
-        : (isFeint ? game.tuning.windupTime * CONFIG.feint.windupMult : game.tuning.windupTime);
+      // 轻刀：固定不分难度，抬手快+下劈延长
       const hitAt = baseTime + delay;
-      const windupAt = hitAt - windupTime;
-      const t0Ratio = isCharged ? CONFIG.charged.chargedT0Ratio : CONFIG.t0Ratio;
-      const t0EndAt = windupAt + windupTime * t0Ratio;
+      let windupTime, windupAt, t0EndAt;
+      if (isCharged) {
+        windupTime = game.tuning.windupTime * CONFIG.charged.windupMult;
+        windupAt = hitAt - windupTime;
+        t0EndAt = windupAt + windupTime * CONFIG.charged.chargedT0Ratio;
+      } else if (isFeint) {
+        windupTime = game.tuning.windupTime * CONFIG.feint.windupMult;
+        windupAt = hitAt - windupTime;
+        t0EndAt = windupAt + windupTime * CONFIG.t0Ratio;
+      } else {
+        // 轻刀：固定前摇，不分难度；抬手88ms，下劈250ms
+        windupTime = CONFIG.light.raiseMs + CONFIG.light.swingMs;
+        windupAt = hitAt - windupTime;
+        t0EndAt = windupAt + CONFIG.light.raiseMs;
+      }
       return { startAt: baseTime, hasBlink, flightMs,
         attackDelay: delay, windupAt, t0EndAt, hitAt,
         feint: isFeint, charged: isCharged, attackType,
-        skillUsed: false, pressedAt: 0, invincibleUntil: 0, swingPlayed: false,
+        skillUsed: false, pressedAt: 0, pressWindupAt: 0, invincibleUntil: 0, swingPlayed: false,
         resolved: false, consumedSkill: false, outcome: "", bounceStartAt: 0 };
     }
 
@@ -901,9 +915,10 @@
       game.round.resolved = true; game.round.outcome = "success"; game.round.bounceStartAt = now;
       game.stats.totalAttempts += 1; game.stats.successCount += 1;
       game.stats.currentStreak += 1; game.stats.bestStreak = Math.max(game.stats.bestStreak, game.stats.currentStreak);
-      const reaction = now - game.round.pressedAt;
-      game.stats.reactionSum += reaction; game.stats.reactionCount += 1;
-      game.stats.lastReactionTime = reaction;
+      // 反应时间 = 按钢时刻 - 抬手起始（按钢瞬间的 windupAt 快照）
+      const reaction = Math.max(0, game.round.pressedAt - (game.round.pressWindupAt || game.round.windupAt));
+      game.stats.lastReactionTime = reaction; // 上次反应：是多少填多少，0也显示0
+      if (reaction > 0) { game.stats.reactionSum += reaction; game.stats.reactionCount += 1; } // 只有成功且>0才进入平均
       game.speedBoostUntil = now + CONFIG.speedBoostDuration;
       game.successGlowUntil = now + CONFIG.successGlowDuration;
       game.resultEndAt = now + CONFIG.speedBoostDuration;
@@ -942,11 +957,8 @@
       game.stats.totalAttempts += 1; game.stats.failCount += 1;
       if (isFeinted) game.stats.feintedCount += 1;
       game.stats.currentStreak = 0;
-      if (countReaction && game.round.skillUsed) {
-        const reaction = now - game.round.pressedAt;
-        game.stats.reactionSum += reaction; game.stats.reactionCount += 1;
-        game.stats.lastReactionTime = reaction;
-      }
+      // 失败一律记 0（上次反应显示0），不进入平均；只有成功才进平均
+      game.stats.lastReactionTime = 0;
       game.resultEndAt = now + 950;
       triggerFlash("rgba(251, 113, 133, 1)", 0.55, "edge");
       triggerShake(10, 200);
@@ -986,6 +998,8 @@
       if (game.round.skillUsed) return;
       game.round.skillUsed = true; game.round.consumedSkill = true;
       game.round.pressedAt = now;
+      // 快照此时抬手起始（windupAt），用于算反应时间（骗刀被交钢后会重算时间线，必须用按钢瞬间的值）
+      game.round.pressWindupAt = game.round.windupAt;
       // 骗刀与出刀分离：骗刀动画（举→停→收回）完整播完不打断，收回完成后
       // 屠夫以正常速度重新起手，0.7~1 秒内命中——此时 0.5s 无敌帧必已过期，
       // 玩家在疲劳中也按不出钢筋，必定中刀。中刀判定词走正常逻辑。
@@ -1241,8 +1255,8 @@
       ui.statAvgRt.textContent = s.reactionCount ? formatMs(s.reactionSum / s.reactionCount) : "--";
       // 疲劳状态：是否处于冷却（就绪 / 剩余秒数）
       ui.statBestStreak.textContent = game.state === GameState.COOLDOWN ? formatCooldown(cd) : "就绪";
-      // 上次反应时间（上一轮按技能到命中的耗时）
-      ui.statCooldown.textContent = s.lastReactionTime ? formatMs(s.lastReactionTime) : "--";
+      // 上次反应时间：是多少填多少，0也显示0（null=从未记录才显示--）
+      ui.statCooldown.textContent = s.lastReactionTime !== null ? formatMs(s.lastReactionTime) : "--";
       // 时机练习栏只显示状态，不显示判定文字（判定文字由 Canvas 顶部统一显示，有/无 UI 都可见）
       ui.panelMsg.textContent = STATE_LABELS[game.state] || game.state;
       ui.panelMsg.style.color = "#bfdbfe";
@@ -1754,7 +1768,7 @@
     function shiftTimestamps(delta) {
       if (delta <= 0) return;
       const r = game.round;
-      if (r) ["windupAt", "t0EndAt", "hitAt", "invincibleUntil", "pressedAt", "bounceStartAt"]
+      if (r) ["windupAt", "t0EndAt", "hitAt", "invincibleUntil", "pressedAt", "pressWindupAt", "bounceStartAt"]
         .forEach(k => { if (typeof r[k] === "number") r[k] += delta; });
       ["cooldownEndAt", "resultEndAt", "speedBoostUntil", "successGlowUntil", "skillActiveUntil",
         "fakeNoticeUntil", "_verdictStartAt"].forEach(k => {
