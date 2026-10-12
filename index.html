@@ -88,10 +88,6 @@
     /* 暂停按钮：透明不突出（去掉黄色 emoji，用纯文本符号） */
     .pause-btn { background: transparent !important; border-color: rgba(255,255,255,0.12) !important; }
     .pause-btn:hover { background: rgba(255,255,255,0.06) !important; }
-    /* 难度行放进标题行时去掉自带的上间距 */
-    .title .difficulty-row { margin-top: 0; }
-    /* 统计面板的重置按钮缩小 */
-    .stats-panel .title button { padding: 3px 8px; font-size: 10px; border-radius: 6px; }
     .difficulty-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; pointer-events: auto; }
     button {
       appearance: none; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.08);
@@ -202,47 +198,76 @@
     }
     .key-bind-row .hint { color: var(--muted); font-size: 11px; }
 
+    /* 操作说明弹窗（桌面端左下 ? 按钮触发） */
+    .help-pop { position: fixed; inset: 0; display: none; z-index: 40; pointer-events: auto; background: rgba(2,6,18,0.55); backdrop-filter: blur(4px); }
+    .help-pop.open { display: flex; align-items: flex-end; justify-content: flex-start; padding: 0 0 96px 16px; }
+    .help-card {
+      width: min(92vw, 360px); padding: 16px 18px; border-radius: 14px;
+      background: rgba(10, 14, 24, 0.92); border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .help-card .title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .help-card h2 { font-size: 16px; margin: 0; }
+    .help-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .help-list li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text); }
+    .help-list kbd {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 26px;
+      padding: 0 8px; border: 1px solid rgba(255,255,255,0.18); border-radius: 6px;
+      background: rgba(255,255,255,0.06); font-weight: 700; font-size: 11px;
+    }
+    .help-list span { color: var(--muted); }
+    .help-toggle { font-weight: 700; }
+
     /* ===== 全局精简：隐藏状态徽章、提示文字、被骗和疲劳状态统计项（JS 逻辑保留，仅 CSS 隐藏） ===== */
     #stateBadge, #panelMsg { display: none !important; }
     .stats-panel .grid .stat:nth-child(5),
     .stats-panel .grid .stat:nth-child(7) { display: none !important; }
 
-    /* ===== 响应式：小屏幕折叠/缩小（手机端竖屏/横屏不挡画面） ===== */
+    /* ===== 响应式：仅手机端（≤800px）调整，桌面端不受影响 ===== */
     @media (max-width: 800px) {
-      /* 顶栏：左右并排但紧凑窄（fit-content），不占满全屏；左难度+暂停 / 右统计 */
+      /* 顶栏：左右并排但收紧成窄条（fit-content），不占满全屏；中央留给判定文字 */
       .topbar { flex-direction: row; gap: 4px; justify-content: space-between; align-items: flex-start; }
-      .topbar > .panel { width: fit-content; max-width: 55%; margin: 0; flex: 0 0 auto; }
-      .topbar > .stats-panel { width: fit-content; max-width: 44%; margin: 0; flex: 0 0 auto; }
+      .topbar > .panel { width: fit-content; max-width: 52%; margin: 0; flex: 0 0 auto; position: relative; }
+      .topbar > .stats-panel { width: fit-content; max-width: 42%; margin: 0; flex: 0 0 auto; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
       body.ui-hidden .overlay > .footer-controls { display: none !important; }
-      /* 手机端去掉 backdrop-filter 模糊（移动端 GPU 开销大，拖慢首屏渲染） */
-      .panel, .stats-panel { padding: 5px 6px !important; border-radius: 10px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-      .panel .title { gap: 4px !important; margin-bottom: 2px !important; }
-      .stats-panel .title { margin-bottom: 2px !important; gap: 4px !important; }
-      .stats-panel h2 { font-size: clamp(9px, 2.4vw, 11px) !important; margin: 0 !important; }
-      .stats-panel .title button { padding: 2px 6px !important; font-size: 9px !important; }
-      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(3, 1fr) !important; margin-top: 2px !important; }
-      .stats-panel .stat .label { font-size: 7px !important; }
-      .stats-panel .stat .value { font-size: clamp(9px, 2.2vw, 11px) !important; }
+      /* 手机端去掉 backdrop-filter 模糊（移动端 GPU 开销大） */
+      .panel, .stats-panel { padding: 4px 6px !important; border-radius: 10px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      /* 左栏：隐藏标题，标题行清空塌缩；难度行顶到最上 */
+      .panel h1 { display: none !important; }
+      .panel .title { margin: 0 !important; min-height: 0 !important; gap: 0 !important; }
+      .panel .title-tools { position: absolute; top: calc(100% + 4px); left: 0; }
       .difficulty-row { gap: 3px !important; margin-top: 0 !important; }
       .difficulty-row button { padding: 3px 6px !important; font-size: clamp(9px, 2.2vw, 11px) !important; }
       .difficulty-note { font-size: clamp(7px, 1.8vw, 9px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 2px !important; }
+      /* 右栏统计：2 列不挤中央，往右靠；重置按钮缩小 */
+      .stats-panel .title { margin-bottom: 2px !important; gap: 4px !important; }
+      .stats-panel h2 { font-size: clamp(9px, 2.4vw, 11px) !important; margin: 0 !important; }
+      .stats-panel .title button { padding: 2px 6px !important; font-size: 9px !important; border-radius: 6px !important; }
+      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(2, 1fr) !important; margin-top: 2px !important; }
+      .stats-panel .stat .label { font-size: 7px !important; }
+      .stats-panel .stat .value { font-size: clamp(9px, 2.2vw, 11px) !important; }
       /* 图标按钮（暂停）：紧凑 */
       .icon-btn { width: clamp(30px, 7vw, 36px) !important; height: clamp(30px, 7vw, 36px) !important; font-size: 13px !important; }
+      /* 手机端隐藏操作说明 ? 按钮（手机无法 hover，用触摸按钮说明代替） */
+      .help-toggle { display: none !important; }
+      /* 手机端隐藏 ⚙ 设置按钮（手机端只保留暂停按钮，设置走菜单） */
+      #settingsBtn { display: none !important; }
       /* 手机端：Shift 按钮放大到和触发一样大 */
       .look-btn {
         width: clamp(76px, 9vw, 108px) !important; height: clamp(76px, 9vw, 108px) !important;
         font-size: clamp(14px, 1.1vw, 18px) !important;
       }
+      /* 重新开始/触发按钮贴住最下面 */
+      .footer-controls { bottom: 2px !important; gap: 8px; }
+      .mobile-controls { align-self: flex-end; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
       .menu-hint-mobile { display: block !important; margin-top: 14px !important; padding-top: 12px !important; }
       .menu-card { padding: 20px 18px !important; }
       .menu-card h2 { font-size: clamp(16px, 4.4vw, 24px) !important; margin-bottom: 14px !important; }
       .menu-card .menu-actions button { padding: 10px 28px !important; font-size: clamp(13px, 3.4vw, 15px) !important; }
-      .footer-controls { gap: 8px; }
-      .mobile-controls { align-self: flex-end; }
     }
     /* 手机端菜单触摸说明（默认隐藏，手机端显示） */
     .menu-hint-mobile { display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);
@@ -263,11 +288,15 @@
       <div class="topbar">
         <div class="panel">
           <div class="title">
-            <div class="difficulty-row" id="difficultyButtons"></div>
-            <button id="pauseBtn" class="icon-btn pause-btn" type="button" title="暂停">❚❚</button>
+            <h1>钢筋时机练习</h1>
+            <div class="title-tools" style="display:flex; gap:8px; align-items:center;">
+              <button id="settingsBtn" class="icon-btn" type="button" title="按键设置 (O)">⚙</button>
+              <button id="pauseBtn" class="icon-btn pause-btn" type="button" title="暂停">❚❚</button>
+              <span class="badge" id="stateBadge">状态：菜单</span>
+            </div>
           </div>
-          <span class="badge" id="stateBadge">状态：菜单</span>
           <div class="panel-msg" id="panelMsg">准备练习</div>
+          <div class="difficulty-row" id="difficultyButtons"></div>
           <div class="difficulty-note" id="difficultyNote"></div>
         </div>
 
@@ -315,6 +344,7 @@
         <!-- 左下：Shift 向后看触摸键（手机体验） -->
         <div class="footer-left">
           <button id="lookBackBtn" class="touch-btn look-btn" type="button">回头</button>
+          <button id="helpBtn" class="icon-btn help-toggle" type="button" title="操作说明">?</button>
         </div>
         <div class="mobile-controls">
           <button id="startTouchBtn" class="touch-btn" type="button">开始</button>
@@ -340,6 +370,25 @@
           <button id="rebindBtn" type="button">按下任意键绑定</button>
           <span class="hint" id="rebindHint"></span>
         </div>
+      </div>
+    </div>
+
+    <!-- 操作说明弹窗（桌面端，左下 ? 按钮触发） -->
+    <div class="help-pop" id="helpPop">
+      <div class="help-card">
+        <div class="title">
+          <h2>操作说明</h2>
+          <button id="closeHelpBtn" class="icon-btn" type="button">✕</button>
+        </div>
+        <ul class="help-list">
+          <li><kbd>Space</kbd><span>开始 / 重新开始</span></li>
+          <li><kbd>E</kbd><span>触发钢筋铁骨</span></li>
+          <li><kbd>Shift</kbd> / 右键<span>向后看</span></li>
+          <li><kbd>R</kbd><span>重置统计</span></li>
+          <li><kbd>P</kbd><span>暂停 / 继续</span></li>
+          <li><kbd>H</kbd><span>隐藏 / 显示 UI</span></li>
+          <li><kbd>O</kbd><span>按键设置</span></li>
+        </ul>
       </div>
     </div>
   </div>
@@ -507,6 +556,10 @@
       deadHardBtn: document.getElementById("deadHardBtn"),
       lookBackBtn: document.getElementById("lookBackBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
+      settingsBtn: document.getElementById("settingsBtn"),
+      helpBtn: document.getElementById("helpBtn"),
+      helpPop: document.getElementById("helpPop"),
+      closeHelpBtn: document.getElementById("closeHelpBtn"),
       settingsModal: document.getElementById("settingsModal"),
       closeSettingsBtn: document.getElementById("closeSettingsBtn"),
       optWheel: document.getElementById("optWheel"),
@@ -1581,17 +1634,18 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.textAlign = "center";
-      ctx.shadowColor = color === "#dcfce7" ? "rgba(74, 222, 128, 0.95)" : "rgba(251, 113, 133, 0.95)";
-      ctx.shadowBlur = 28;
+      ctx.shadowColor = color === "#dcfce7" ? "rgba(74, 222, 128, 0.85)" : "rgba(251, 113, 133, 0.85)";
+      ctx.shadowBlur = 10;
       ctx.fillStyle = color;
-      // 放在屏幕最上部，不遮挡右侧屠夫模型
-      const fontSize = Math.max(24, Math.min(52, window.innerWidth * 0.04));
+      // 放在屏幕最上部，不遮挡右侧屠夫模型；手机端顶栏占位多，下移避开
+      const verdictY = window.innerWidth < 800 ? 0.15 : 0.09;
+      const fontSize = Math.max(34, Math.min(52, window.innerWidth * 0.07));
       ctx.font = `900 ${fontSize}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
-      ctx.fillText(title, canvas.width / 2, canvas.height * 0.09);
+      ctx.fillText(title, canvas.width / 2, canvas.height * verdictY);
       ctx.shadowBlur = 0;
       ctx.fillStyle = color;
-      ctx.font = `700 ${Math.max(12, Math.min(18, window.innerWidth * 0.015))}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
-      ctx.fillText(sub, canvas.width / 2, canvas.height * 0.09 + fontSize * 0.9);
+      ctx.font = `700 ${Math.max(15, Math.min(22, window.innerWidth * 0.022))}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
+      ctx.fillText(sub, canvas.width / 2, canvas.height * verdictY + fontSize * 0.9);
       ctx.restore();
     }
 
@@ -1652,6 +1706,9 @@
       }
       if (key === "Escape" && ui.settingsModal.classList.contains("open")) {
         event.preventDefault(); toggleSettings(false); return;
+      }
+      if (key === "Escape" && ui.helpPop && ui.helpPop.classList.contains("open")) {
+        event.preventDefault(); ui.helpPop.classList.remove("open"); return;
       }
       const lower = key.toLowerCase();
       if (lower === "o") { event.preventDefault(); toggleSettings(true); return; }
@@ -1815,6 +1872,11 @@
       lookBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 
       ui.pauseBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); togglePause(); });
+      // 桌面端：⚙ 设置按钮 + ? 操作说明按钮
+      if (ui.settingsBtn) ui.settingsBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); toggleSettings(true); });
+      if (ui.helpBtn) ui.helpBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); ui.helpPop.classList.toggle("open"); });
+      if (ui.closeHelpBtn) ui.closeHelpBtn.addEventListener("click", () => ui.helpPop.classList.remove("open"));
+      if (ui.helpPop) ui.helpPop.addEventListener("click", (e) => { if (e.target === ui.helpPop) ui.helpPop.classList.remove("open"); });
       ui.closeSettingsBtn.addEventListener("click", () => toggleSettings(false));
       ui.optWheel.addEventListener("click", () => { game.trigger = { type: "wheel", key: null }; saveTrigger(game.trigger); refreshSettingsUI(); updateHud(); });
       ui.optKey.addEventListener("click", () => { if (game.trigger.type !== "key") { game.trigger = { type: "key", key: game.trigger.key || "e" }; saveTrigger(game.trigger); } refreshSettingsUI(); updateHud(); });
