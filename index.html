@@ -149,12 +149,6 @@
       background: rgba(96, 165, 250, 0.18); border-color: rgba(96, 165, 250, 0.4); color: #dbeafe; font-weight: 700;
     }
     .look-btn.held { background: rgba(96, 165, 250, 0.42); border-color: rgba(96, 165, 250, 0.7); }
-    .help-pop {
-      position: absolute; left: 0; bottom: calc(100% + 8px);
-      max-width: min(420px, 80vw); display: none; font-size: clamp(11px, 0.85vw, 13px); line-height: 1.6;
-      pointer-events: auto;
-    }
-    .help-pop.open { display: block; }
     .mobile-controls { display: flex; gap: 10px; pointer-events: auto; }
     .touch-btn {
       width: clamp(60px, 7vw, 86px); height: clamp(60px, 7vw, 86px); border-radius: 50%; font-size: clamp(12px, 1vw, 16px);
@@ -208,28 +202,29 @@
 
     /* ===== 响应式：小屏幕折叠/缩小（手机端竖屏/横屏不挡画面） ===== */
     @media (max-width: 800px) {
-      .topbar { flex-direction: column; gap: 6px; }
-      .topbar > .panel { max-width: 100%; width: 100%; }
-      .stats-panel { max-width: 100%; width: 100%; margin-left: 0; }
+      /* 手机端：两栏并排同一行，各占一半，避免每栏独占整行挡住画面 */
+      .topbar { flex-direction: row; gap: 4px; align-items: stretch; }
+      .topbar > .panel, .topbar > .stats-panel { flex: 1 1 50%; width: 50%; max-width: 50%; min-width: 0; margin-left: 0; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
       body.ui-hidden .overlay > .footer-controls { display: none !important; }
-      .panel, .stats-panel { padding: 6px 8px !important; border-radius: 10px !important; }
-      .panel h1 { font-size: clamp(12px, 3.4vw, 14px) !important; }
-      .stats-panel h2 { font-size: clamp(11px, 2.8vw, 13px) !important; }
-      .stats-panel .grid { gap: 4px 8px !important; }
-      .stats-panel .stat .label { font-size: 9px !important; }
-      .stats-panel .stat .value { font-size: clamp(11px, 2.8vw, 13px) !important; }
-      .difficulty-row { gap: 4px !important; margin-top: 6px !important; }
-      .difficulty-row button { padding: 5px 8px !important; font-size: clamp(10px, 2.6vw, 12px) !important; }
-      .difficulty-note { font-size: clamp(9px, 2.4vw, 11px) !important; min-height: 0 !important; line-height: 1.4 !important; }
+      .panel, .stats-panel { padding: 5px 6px !important; border-radius: 10px !important; }
+      .panel .title { gap: 4px !important; }
+      .panel h1 { font-size: clamp(10px, 2.8vw, 13px) !important; }
+      .stats-panel h2 { font-size: clamp(10px, 2.6vw, 12px) !important; }
+      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(3, 1fr) !important; }
+      .stats-panel .stat .label { font-size: 8px !important; }
+      .stats-panel .stat .value { font-size: clamp(10px, 2.4vw, 12px) !important; }
+      .difficulty-row { gap: 3px !important; margin-top: 4px !important; flex-wrap: wrap !important; }
+      .difficulty-row button { padding: 4px 6px !important; font-size: clamp(9px, 2.2vw, 11px) !important; }
+      .difficulty-note { font-size: clamp(8px, 2vw, 10px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 3px !important; }
       /* 手机端：Shift 按钮放大到和触发一样大 */
       .look-btn {
         width: clamp(76px, 9vw, 108px) !important; height: clamp(76px, 9vw, 108px) !important;
         font-size: clamp(14px, 1.1vw, 18px) !important;
       }
-      /* 手机端：? 按钮放大，方便手指点 */
-      .icon-btn { width: clamp(44px, 11vw, 52px) !important; height: clamp(44px, 11vw, 52px) !important; font-size: 18px !important; }
+      /* 手机端：图标按钮放大，方便手指点 */
+      .icon-btn { width: clamp(40px, 10vw, 48px) !important; height: clamp(40px, 10vw, 48px) !important; font-size: 18px !important; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
       .menu-hint-mobile { display: block !important; }
@@ -257,7 +252,7 @@
           <div class="title">
             <h1>钢筋时机练习</h1>
             <div style="display:flex; gap:8px; align-items:center;">
-              <button id="settingsBtn" class="icon-btn" type="button" title="按键设置 (O)">⚙</button>
+              <button id="pauseBtn" class="icon-btn" type="button" title="暂停 (P)">⏸</button>
               <span class="badge" id="stateBadge">状态：菜单</span>
             </div>
           </div>
@@ -302,27 +297,19 @@
           <kbd>O</kbd> 设置
         </div>
         <div class="menu-hint-mobile">
-          左下 <strong>回头</strong> 按住向后看 &nbsp;
-          右下 <strong>钢筋</strong> 触发技能<br>
-          <strong>开始</strong> 按钮 开始/重开
+          观察屠夫出刀交钢
         </div>
       </div>
 
       <div class="footer-controls">
-        <!-- 左下：操作说明按钮 + Shift 向后看触摸键（手机体验） -->
+        <!-- 左下：Shift 向后看触摸键（手机体验） -->
         <div class="footer-left">
           <button id="lookBackBtn" class="touch-btn look-btn" type="button">回头</button>
-          <button id="helpToggleBtn" class="icon-btn" type="button" title="操作说明">?</button>
         </div>
         <div class="mobile-controls">
           <button id="startTouchBtn" class="touch-btn" type="button">开始</button>
           <button id="deadHardBtn" class="touch-btn main" type="button">钢筋</button>
         </div>
-      </div>
-
-      <!-- 操作说明弹出面板（点 ? 展开/收起，默认收起不挡手） -->
-      <div class="panel help-pop" id="helpPop">
-        <div><strong>操作：</strong><span id="triggerTip">E 键</span> 触发，<strong>Shift</strong>/右键向后看，<strong>Space</strong> 开始/重开，<strong>R</strong> 重置，<strong>P</strong> 暂停，<strong>H</strong> 隐藏 UI，<strong>O</strong> 设置。</div>
       </div>
     </div>
 
@@ -369,13 +356,13 @@
       windupTime: 220, feintChance: 0.15,
 
       t0Ratio: 0.4, feintPauseMs: 100, feintStepBack: 30,
-      attackLean: -0.22, attackChopLean: -0.3,
-      bodyScale: { attackFwd: 1.08, feintBack: 0.92 },
+      attackLean: -0.14, attackChopLean: -0.2,
+      bodyScale: { attackFwd: 1.04, feintBack: 0.92 },
 
       // 蓄力刀：前摇总时长 = windupTime × windupMult（挥刀更慢、抬手更久），
       // t1 下劈时身体前冲 lunge 像素（攻击距离更远）
       // chargedT0Ratio：蓄力刀前半圈（举刀）占比更高，后半圈（下劈）更快
-      charged: { windupMult: 2.8, lunge: 90, scaleBoost: 1.12, chargedT0Ratio: 0.78 },
+      charged: { windupMult: 2.8, lunge: 42, scaleBoost: 1.04, chargedT0Ratio: 0.78 },
 
       bg: { top: "#1a2230", mid: "#121826", bottom: "#0d1320" },
       outline: {
@@ -388,7 +375,7 @@
         feintRaisedAngle: Math.PI * 1.25, // 骗刀：从初始位置顺时针挥 45°（与真刀大幅举刀明显区分），随后停顿收回
         swungAngle: Math.PI * 1.25, bouncedAngle: Math.PI * 1.75,
         trailAlpha: 0.3, trailMaxFrames: 6, trailLifeMs: 130,
-        drawW: 86, drawH: 165   // 武器尺寸（6.png）
+        drawW: 72, drawH: 138   // 武器尺寸（6.png）
       },
 
       // ===== 第一人称手部（10.png 正向使用；左手水平镜像 = 左右手） =====
@@ -508,10 +495,8 @@
       resetStatsBtn: document.getElementById("resetStatsBtn"),
       startTouchBtn: document.getElementById("startTouchBtn"),
       deadHardBtn: document.getElementById("deadHardBtn"),
-      helpToggleBtn: document.getElementById("helpToggleBtn"),
-      helpPop: document.getElementById("helpPop"),
       lookBackBtn: document.getElementById("lookBackBtn"),
-      settingsBtn: document.getElementById("settingsBtn"),
+      pauseBtn: document.getElementById("pauseBtn"),
       settingsModal: document.getElementById("settingsModal"),
       closeSettingsBtn: document.getElementById("closeSettingsBtn"),
       optWheel: document.getElementById("optWheel"),
@@ -520,7 +505,6 @@
       currentKey: document.getElementById("currentKey"),
       rebindBtn: document.getElementById("rebindBtn"),
       rebindHint: document.getElementById("rebindHint"),
-      triggerTip: document.getElementById("triggerTip"),
       skillWidget: document.getElementById("skillWidget"),
       fatigueRing: document.getElementById("fatigueRing"),
       deadhardBar: document.getElementById("deadhardBar")
@@ -1184,7 +1168,6 @@
       // 时机练习栏只显示状态，不显示判定文字（判定文字由 Canvas 顶部统一显示，有/无 UI 都可见）
       ui.panelMsg.textContent = STATE_LABELS[game.state] || game.state;
       ui.panelMsg.style.color = "#bfdbfe";
-      ui.triggerTip.textContent = describeTrigger(game.trigger);
 
       // —— 左侧两个独立条 ——
       // 1) 圆形疲劳条：只有按了钢筋（cooldownEndAt>0）才显示红色转圈，转完归零
@@ -1217,7 +1200,7 @@
       const forwardX = canvas.width * 0.9, backwardX = canvas.width * 0.5;
       let killerX = forwardX + (backwardX - forwardX) * backBlend;
       let killerY = canvas.height * 0.56 + bob * 0.35 - backBlend * 22;
-      let killerScale = (0.70 + backBlend * 0.7) * (game.weaponState.bodyScale || 1);
+      let killerScale = (0.58 + backBlend * 0.7) * (game.weaponState.bodyScale || 1);
 
       if (game.state === GameState.SUCCESS && now < game.speedBoostUntil) {
         const t = clamp((now - (game.speedBoostUntil - CONFIG.speedBoostDuration)) / CONFIG.speedBoostDuration, 0, 1);
@@ -1802,8 +1785,6 @@
         handlePressDeadHard();
       });
 
-      // 操作说明弹出面板：点 ? 展开/收起（默认收起，不挡手）
-      ui.helpToggleBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); ui.helpPop.classList.toggle("open"); });
       // 左下 Shift 触摸键：按住 = 向后看（掉黄条冻结/回头视角），松开恢复
       // 关键：必须同步调用 syncLookBackState() 更新 lookBackHeld，否则视角/黄条不响应
       const lookBtn = ui.lookBackBtn;
@@ -1816,7 +1797,7 @@
         lookBtn.addEventListener(ev, () => { game.keyboardLookBack = false; syncLookBackState(); lookBtn.classList.remove("held"); }));
       lookBtn.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      ui.settingsBtn.addEventListener("click", () => toggleSettings(true));
+      ui.pauseBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); togglePause(); });
       ui.closeSettingsBtn.addEventListener("click", () => toggleSettings(false));
       ui.optWheel.addEventListener("click", () => { game.trigger = { type: "wheel", key: null }; saveTrigger(game.trigger); refreshSettingsUI(); updateHud(); });
       ui.optKey.addEventListener("click", () => { if (game.trigger.type !== "key") { game.trigger = { type: "key", key: game.trigger.key || "e" }; saveTrigger(game.trigger); } refreshSettingsUI(); updateHud(); });
