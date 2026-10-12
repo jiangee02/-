@@ -208,12 +208,12 @@
 
     /* ===== 响应式：小屏幕折叠/缩小（手机端竖屏/横屏不挡画面） ===== */
     @media (max-width: 800px) {
-      .topbar { flex-wrap: nowrap; gap: 6px; }
+      .topbar { flex-direction: column; gap: 6px; }
+      .topbar > .panel { max-width: 100%; width: 100%; }
+      .stats-panel { max-width: 100%; width: 100%; margin-left: 0; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
       body.ui-hidden .overlay > .footer-controls { display: none !important; }
-      .topbar > .panel { max-width: 47vw; width: fit-content; }
-      .stats-panel { max-width: 45vw; width: fit-content; }
       .panel, .stats-panel { padding: 6px 8px !important; border-radius: 10px !important; }
       .panel h1 { font-size: clamp(12px, 3.4vw, 14px) !important; }
       .stats-panel h2 { font-size: clamp(11px, 2.8vw, 13px) !important; }
@@ -223,9 +223,22 @@
       .difficulty-row { gap: 4px !important; margin-top: 6px !important; }
       .difficulty-row button { padding: 5px 8px !important; font-size: clamp(10px, 2.6vw, 12px) !important; }
       .difficulty-note { font-size: clamp(9px, 2.4vw, 11px) !important; min-height: 0 !important; line-height: 1.4 !important; }
+      /* 手机端：Shift 按钮放大到和触发一样大 */
+      .look-btn {
+        width: clamp(76px, 9vw, 108px) !important; height: clamp(76px, 9vw, 108px) !important;
+        font-size: clamp(14px, 1.1vw, 18px) !important;
+      }
+      /* 手机端：? 按钮放大，方便手指点 */
+      .icon-btn { width: clamp(44px, 11vw, 52px) !important; height: clamp(44px, 11vw, 52px) !important; font-size: 18px !important; }
+      /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
+      .menu-hint { display: none !important; }
+      .menu-hint-mobile { display: block !important; }
       .footer-controls { gap: 8px; }
       .mobile-controls { align-self: flex-end; }
     }
+    /* 手机端菜单触摸说明（默认隐藏，手机端显示） */
+    .menu-hint-mobile { display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: clamp(11px, 0.85vw, 13px); color: rgba(255,255,255,0.6); line-height: 1.8; }
   </style>
 </head>
 <body>
@@ -288,17 +301,22 @@
           <kbd>H</kbd> 隐藏 UI &nbsp;
           <kbd>O</kbd> 设置
         </div>
+        <div class="menu-hint-mobile">
+          左下 <strong>回头</strong> 按住向后看 &nbsp;
+          右下 <strong>钢筋</strong> 触发技能<br>
+          <strong>开始</strong> 按钮 开始/重开
+        </div>
       </div>
 
       <div class="footer-controls">
         <!-- 左下：操作说明按钮 + Shift 向后看触摸键（手机体验） -->
         <div class="footer-left">
-          <button id="lookBackBtn" class="touch-btn look-btn" type="button">Shift</button>
+          <button id="lookBackBtn" class="touch-btn look-btn" type="button">回头</button>
           <button id="helpToggleBtn" class="icon-btn" type="button" title="操作说明">?</button>
         </div>
         <div class="mobile-controls">
           <button id="startTouchBtn" class="touch-btn" type="button">开始</button>
-          <button id="deadHardBtn" class="touch-btn main" type="button">触发</button>
+          <button id="deadHardBtn" class="touch-btn main" type="button">钢筋</button>
         </div>
       </div>
 
@@ -384,7 +402,7 @@
       arms: {
         leftX: 0.30, rightX: 0.70,
         baseDrop: 65, liftY: 30,
-        handW: 220, handH: 240, widthScale: 1.0,
+        handW: 200, handH: 218, widthScale: 1.0,
         rotLeft: -0.16, rotRight: 0.16,
         bobAmp: 12, color: "#ffffff", shadowColor: "rgba(0,0,0,0.5)",
         imgFilter: "brightness(0.85) saturate(0.8) contrast(1.08)"  // 手部图压暗去光泽（调太亮/太光滑就改这里）
@@ -1199,7 +1217,7 @@
       const forwardX = canvas.width * 0.9, backwardX = canvas.width * 0.5;
       let killerX = forwardX + (backwardX - forwardX) * backBlend;
       let killerY = canvas.height * 0.56 + bob * 0.35 - backBlend * 22;
-      let killerScale = (0.78 + backBlend * 0.7) * (game.weaponState.bodyScale || 1);
+      let killerScale = (0.70 + backBlend * 0.7) * (game.weaponState.bodyScale || 1);
 
       if (game.state === GameState.SUCCESS && now < game.speedBoostUntil) {
         const t = clamp((now - (game.speedBoostUntil - CONFIG.speedBoostDuration)) / CONFIG.speedBoostDuration, 0, 1);
@@ -1770,7 +1788,11 @@
       if (ui.restartBtn.addEventListener) ui.restartBtn.addEventListener("click", restartRoundOnly);
       if (ui.resetBtn.addEventListener) ui.resetBtn.addEventListener("click", resetStats);
       ui.resetStatsBtn.addEventListener("click", resetStats);
-      ui.startTouchBtn.addEventListener("click", () => { if (game.state === GameState.MENU) startPractice(); else restartRoundOnly(); });
+      // 手机多指触摸兼容：触摸按钮统一用 pointerdown（按住回头时也能点开始/钢筋）
+      ui.startTouchBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (game.state === GameState.MENU) startPractice(); else restartRoundOnly();
+      });
       // 手机多指触摸兼容：改用 pointerdown 而非 click。
       // 原因：按住 Shift（第一指 pointerdown 已 setPointerCapture）时，第二指点击钢筋
       // 在手机上不会合成 click 事件，导致钢筋按不出。pointerdown 按指针独立触发，
@@ -1781,7 +1803,7 @@
       });
 
       // 操作说明弹出面板：点 ? 展开/收起（默认收起，不挡手）
-      ui.helpToggleBtn.addEventListener("click", () => ui.helpPop.classList.toggle("open"));
+      ui.helpToggleBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); ui.helpPop.classList.toggle("open"); });
       // 左下 Shift 触摸键：按住 = 向后看（掉黄条冻结/回头视角），松开恢复
       // 关键：必须同步调用 syncLookBackState() 更新 lookBackHeld，否则视角/黄条不响应
       const lookBtn = ui.lookBackBtn;
