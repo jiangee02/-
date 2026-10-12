@@ -248,8 +248,13 @@
       .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(1, 1fr) !important; margin-top: 2px !important; }
       .stats-panel .stat .label { font-size: 7px !important; }
       .stats-panel .stat .value { font-size: clamp(9px, 2.2vw, 11px) !important; }
-      /* 图标按钮（暂停）：紧凑 */
-      .icon-btn { width: clamp(30px, 7vw, 36px) !important; height: clamp(30px, 7vw, 36px) !important; font-size: 13px !important; }
+      /* 图标按钮（暂停）：紧凑偏大，方便手指点 */
+      .icon-btn { width: clamp(40px, 9vw, 48px) !important; height: clamp(40px, 9vw, 48px) !important; font-size: 13px !important; }
+      /* 暂停按钮：隐藏 ❚❚ 文字，用 CSS 画两条细竖线（原文字太粗） */
+      .pause-btn { font-size: 0 !important; gap: 4px; color: rgba(255,255,255,0.85); }
+      .pause-btn::before, .pause-btn::after {
+        content: ""; width: 3px; height: 16px; background: currentColor; border-radius: 2px; display: block;
+      }
       /* 手机端隐藏操作说明 ? 按钮（手机无法 hover，用触摸按钮说明代替） */
       .help-toggle { display: none !important; }
       /* 手机端隐藏 ⚙ 设置按钮（手机端只保留暂停按钮，设置走菜单） */
@@ -261,8 +266,8 @@
       }
       /* 重新开始/触发按钮贴住最下面 */
       .footer-controls { bottom: 0 !important; gap: 8px; }
-      /* 疲劳/黄条整体上移，回头时不挡屠夫模型 */
-      .skill-widget { top: 40% !important; }
+      /* 疲劳/黄条整体上移到暂停按钮下方，留一点距离 */
+      .skill-widget { top: 18% !important; }
       .mobile-controls { align-self: flex-end; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
@@ -1636,18 +1641,19 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.shadowColor = color === "#dcfce7" ? "rgba(74, 222, 128, 0.85)" : "rgba(251, 113, 133, 0.85)";
       ctx.shadowBlur = 10;
       ctx.fillStyle = color;
       // 放在屏幕最上部，不遮挡右侧屠夫模型；手机端顶栏占位多，下移避开
       const verdictY = window.innerWidth < 800 ? 0.15 : 0.09;
-      const fontSize = Math.max(34, Math.min(52, window.innerWidth * 0.07));
+      const fontSize = Math.max(38, Math.min(52, window.innerWidth * 0.078));
       ctx.font = `900 ${fontSize}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
       ctx.fillText(title, canvas.width / 2, canvas.height * verdictY);
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 6;
       ctx.fillStyle = color;
-      ctx.font = `700 ${Math.max(15, Math.min(22, window.innerWidth * 0.022))}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
-      ctx.fillText(sub, canvas.width / 2, canvas.height * verdictY + fontSize * 0.9);
+      ctx.font = `700 ${Math.max(18, Math.min(22, window.innerWidth * 0.026))}px 'Segoe UI', 'Microsoft YaHei', sans-serif`;
+      ctx.fillText(sub, canvas.width / 2, canvas.height * verdictY + fontSize * 0.95);
       ctx.restore();
     }
 
