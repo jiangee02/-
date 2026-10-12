@@ -479,10 +479,10 @@
       feint: { windupMult: 3.6 },
 
       // 轻刀：抬手快(90ms)，下劈按难度分；手机端触摸响应更快，抬手80ms+下劈×0.6
-      light: { raiseMs: 90, raiseMobileMs: 80, swingMs: { easy: 220, normal: 270, hard: 250 }, mobileMult: 0.6 },
+      light: { raiseMs: 75, raiseMobileMs: 75, swingMs: { easy: 220, normal: 165, hard: 140 }, mobileMult: 1 },
 
       // 蓄力刀：桌面 windupMult 2.4，下劈(t1)固定130ms；手机端下劈155ms(慢一点)，整体×0.52
-      charged: { windupMult: 2.88, lunge: 42, scaleBoost: 1.04, t1Ms: 200, t1MobileMs: 200, mobileMult: 0.52 },
+      charged: { windupMult: 2.2, lunge: 42, scaleBoost: 1.04, t1Ms: 180, t1MobileMs: 180, mobileMult: 1 },
 
       // ===== 追逐声 / 钢筋黄条 =====
       chaseVolume: 0.45,     // 追逐循环正常音量
@@ -501,7 +501,7 @@
         },
         hard: {
           label: "困难", attackDelayMin: 1500, attackDelayMax: 5000, windupTime: 180, feintChance: 0.30,
-          attackPool: ["light","light","feint","feint"], note: "只有轻刀和骗刀，难度较大。"
+          attackPool: ["light","light","feint","feint"], note: "轻刀和骗刀，难度较大。"
         }
       },
 
@@ -533,8 +533,8 @@
       },
 
       /* 【手动改这里】骗刀 Canvas 大字（屏幕中央，随机取一条，不分难度） */
-      feintBaitedTexts: ["不吃钢筋", "等着你呢", "防着你呢"], // 骗到钢筋（交钢被骗）
-      feintNoBaitTexts: ["有操作的", "不吃压迫", "大心脏！"]    // 没骗到（看清骗刀没交）
+      feintBaitedTexts: ["不吃钢筋", "等着你呢", "防着你呢","骗你呢"], // 骗到钢筋（交钢被骗）
+      feintNoBaitTexts: ["有操作的！", "不吃压迫！", "大心脏！","这么稳！"    // 没骗到（看清骗刀没交）
     };
 
     const GameState = { MENU:"MENU", CHASE:"CHASE", DASHING:"DASHING", SUCCESS:"SUCCESS", FAIL:"FAIL", COOLDOWN:"COOLDOWN" };
