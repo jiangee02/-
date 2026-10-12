@@ -202,22 +202,33 @@
 
     /* ===== 响应式：小屏幕折叠/缩小（手机端竖屏/横屏不挡画面） ===== */
     @media (max-width: 800px) {
-      /* 手机端：两栏并排同一行，各占一半，避免每栏独占整行挡住画面 */
-      .topbar { flex-direction: row; gap: 4px; align-items: stretch; }
-      .topbar > .panel, .topbar > .stats-panel { flex: 1 1 50%; width: 50%; max-width: 50%; min-width: 0; margin-left: 0; }
+      /* 顶栏纵向堆叠（不并排），紧凑 */
+      .topbar { flex-direction: column; gap: 4px; align-items: stretch; }
+      .topbar > .panel, .topbar > .stats-panel { width: 100%; max-width: 100%; margin-left: 0; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
       body.ui-hidden .overlay > .footer-controls { display: none !important; }
-      .panel, .stats-panel { padding: 5px 6px !important; border-radius: 10px !important; }
-      .panel .title { gap: 4px !important; }
-      .panel h1 { font-size: clamp(10px, 2.8vw, 13px) !important; }
-      .stats-panel h2 { font-size: clamp(10px, 2.6vw, 12px) !important; }
-      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(3, 1fr) !important; }
+      /* 手机端去掉 backdrop-filter 模糊（移动端开销大，拖慢首屏渲染） */
+      .panel, .stats-panel { padding: 5px 8px !important; border-radius: 10px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      .panel .title { gap: 4px !important; margin-bottom: 2px !important; }
+      .panel h1 { font-size: clamp(11px, 3vw, 14px) !important; }
+      .stats-panel h2 { font-size: clamp(10px, 2.6vw, 12px) !important; margin: 0 0 4px !important; }
+      .stats-panel .grid { gap: 2px 6px !important; grid-template-columns: repeat(3, 1fr) !important; margin-top: 2px !important; }
       .stats-panel .stat .label { font-size: 8px !important; }
       .stats-panel .stat .value { font-size: clamp(10px, 2.4vw, 12px) !important; }
-      .difficulty-row { gap: 3px !important; margin-top: 4px !important; flex-wrap: wrap !important; }
-      .difficulty-row button { padding: 4px 6px !important; font-size: clamp(9px, 2.2vw, 11px) !important; }
+      .difficulty-row { gap: 4px !important; margin-top: 4px !important; }
+      .difficulty-row button { padding: 4px 8px !important; font-size: clamp(10px, 2.4vw, 12px) !important; }
       .difficulty-note { font-size: clamp(8px, 2vw, 10px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 3px !important; }
+
+      /* 游戏中：隐藏统计面板 + 难度行 + 难度说明 + 面板消息，只留标题+暂停窄条，彻底让出中央判定文字区 */
+      body.state-game .topbar > .stats-panel { display: none !important; }
+      body.state-game .topbar .difficulty-row,
+      body.state-game .topbar .difficulty-note,
+      body.state-game .topbar .panel-msg { display: none !important; }
+      body.state-game .topbar { align-items: flex-start !important; }
+      body.state-game .topbar > .panel { width: fit-content !important; max-width: 70% !important; }
+      /* 菜单中：两栏都显示，纵向堆叠（可看统计、设难度） */
+
       /* 手机端：Shift 按钮放大到和触发一样大 */
       .look-btn {
         width: clamp(76px, 9vw, 108px) !important; height: clamp(76px, 9vw, 108px) !important;
@@ -227,7 +238,10 @@
       .icon-btn { width: clamp(40px, 10vw, 48px) !important; height: clamp(40px, 10vw, 48px) !important; font-size: 18px !important; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
-      .menu-hint-mobile { display: block !important; }
+      .menu-hint-mobile { display: block !important; margin-top: 14px !important; padding-top: 12px !important; }
+      .menu-card { padding: 20px 18px !important; }
+      .menu-card h2 { font-size: clamp(16px, 4.4vw, 24px) !important; margin-bottom: 14px !important; }
+      .menu-card .menu-actions button { padding: 10px 28px !important; font-size: clamp(13px, 3.4vw, 15px) !important; }
       .footer-controls { gap: 8px; }
       .mobile-controls { align-self: flex-end; }
     }
@@ -776,7 +790,12 @@
         resolved: false, consumedSkill: false, outcome: "", bounceStartAt: 0 };
     }
 
-    function changeState(nextState) { game.state = nextState; updateHud(); }
+    function changeState(nextState) {
+      game.state = nextState; updateHud();
+      // 标记菜单/游戏中状态，供 CSS 响应式使用（手机端游戏中隐藏顶栏不挡判定文字）
+      document.body.classList.toggle("state-menu", nextState === GameState.MENU);
+      document.body.classList.toggle("state-game", nextState !== GameState.MENU);
+    }
 
     function enterMenu() {
       changeState(GameState.MENU);
