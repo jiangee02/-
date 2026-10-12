@@ -478,8 +478,8 @@
       // 骗刀动作放慢倍数（举刀+停顿+收回整体时长 ×3.6，hitAt 判定点不变；调大更慢）
       feint: { windupMult: 3.6 },
 
-      // 轻刀：抬手快(88ms)，下劈按难度分；手机端触摸响应更快，整体×0.78
-      light: { raiseMs: 88, swingMs: { easy: 195, normal: 220, hard: 210 }, mobileMult: 0.78 },
+      // 轻刀：抬手快(88ms)，下劈按难度分；手机端触摸响应更快，抬手70ms+下劈×0.78
+      light: { raiseMs: 88, raiseMobileMs: 70, swingMs: { easy: 195, normal: 220, hard: 210 }, mobileMult: 0.78 },
 
       // 蓄力刀：举刀(旋转)更快、下劈(t1)不变；手机端 windupMult 再×mobileMult
       charged: { windupMult: 1.88, lunge: 42, scaleBoost: 1.04, chargedT0Ratio: 0.76, easyT0Ratio: 0.85, mobileMult: 0.78 },
@@ -859,11 +859,12 @@
         windupAt = hitAt - windupTime;
         t0EndAt = windupAt + windupTime * CONFIG.t0Ratio;
       } else {
-        // 轻刀：抬手88ms，下劈按难度分，手机端整体缩短
+        // 轻刀：抬手+下劈按难度分，手机端抬手更短、下劈整体缩短
+        const raiseMs = game.isMobile ? CONFIG.light.raiseMobileMs : CONFIG.light.raiseMs;
         const swingMs = CONFIG.light.swingMs[game.difficulty] * mobile;
-        windupTime = CONFIG.light.raiseMs + swingMs;
+        windupTime = raiseMs + swingMs;
         windupAt = hitAt - windupTime;
-        t0EndAt = windupAt + CONFIG.light.raiseMs;
+        t0EndAt = windupAt + raiseMs;
       }
       return { startAt: baseTime, hasBlink, flightMs,
         attackDelay: delay, windupAt, t0EndAt, hitAt,
