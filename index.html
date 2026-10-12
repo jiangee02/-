@@ -430,8 +430,7 @@
 
       // 蓄力刀：前摇总时长 = windupTime × windupMult（挥刀更慢、抬手更久），
       // t1 下劈时身体前冲 lunge 像素（攻击距离更远）
-      // chargedT0Ratio：蓄力刀前半圈（举刀）占比更高，后半圈（下劈）更快
-      charged: { windupMult: 2.8, lunge: 42, scaleBoost: 1.04, chargedT0Ratio: 0.78 },
+      // chargedT0Ratio：蓄力刀前半圈（举刀）占比更高，后半圈（下劈）更快；简单模式用 easyT0Ratio 更快
 
       bg: { top: "#1a2230", mid: "#121826", bottom: "#0d1320" },
       outline: {
@@ -479,8 +478,11 @@
       // 骗刀动作放慢倍数（举刀+停顿+收回整体时长 ×3.6，hitAt 判定点不变；调大更慢）
       feint: { windupMult: 3.6 },
 
-      // 轻刀：固定不分难度；抬手快(88ms)下劈延长(210ms)，总298ms，够目压反应
-      light: { raiseMs: 88, swingMs: 210 },
+      // 轻刀：抬手快(88ms)，下劈按难度分；手机端触摸响应更快，整体×0.9
+      light: { raiseMs: 88, swingMs: { easy: 195, normal: 220, hard: 210 }, mobileMult: 0.9 },
+
+      // 蓄力刀：举刀(旋转)更快、下劈(t1)不变；chargedT0Ratio↓+windupMult↓ 让 t0 缩短、t1 仍≈136ms
+      charged: { windupMult: 1.88, lunge: 42, scaleBoost: 1.04, chargedT0Ratio: 0.76, easyT0Ratio: 0.85 },
 
       // ===== 追逐声 / 钢筋黄条 =====
       chaseVolume: 0.45,     // 追逐循环正常音量
@@ -491,7 +493,7 @@
       difficultyOptions: {
         easy: {
           label: "简单", attackDelayMin: 1500, attackDelayMax: 5000, windupTime: 220, feintChance: 0.00,
-          attackPool: ["charged"], note: "只有蓄力刀，前摇极长，有手就行。"
+          attackPool: ["charged"], note: "只有蓄力刀，有手就行。"
         },
         normal: {
           label: "普通", attackDelayMin: 1500, attackDelayMax: 5000, windupTime: 220, feintChance: 0.12,
@@ -523,16 +525,16 @@
           success:  ["好钢", "好钢兄弟"]
         },
         hard: {
-          tooEarly: ["钢早了","这屠夫不会玩","博弈失败"],
-          tooLate:  ["我钢了！", "我真的钢了！！", "我钢筋呢！！！","可惜可惜"],
-          noPress:  ["别带钢筋了", "不如当个位移"],
+          tooEarly: ["早了","放松点","博弈失败","别太紧张"],
+          tooLate:  ["我钢了！", "我真的钢了！！", "我钢筋呢！！！","可惜了"],
+          noPress:  ["钢筋呢", "不如当个位移"],
           success:  ["好钢", "好钢兄弟", "兄弟好钢", "牛逼兄弟"]
         }
       },
 
       /* 【手动改这里】骗刀 Canvas 大字（屏幕中央，随机取一条，不分难度） */
       feintBaitedTexts: ["不吃钢筋", "等着你呢", "防着你呢"], // 骗到钢筋（交钢被骗）
-      feintNoBaitTexts: ["可以可以", "不吃压迫", "大心脏"]    // 没骗到（看清骗刀没交）
+      feintNoBaitTexts: ["有操作的", "不吃压迫", "大心脏！"]    // 没骗到（看清骗刀没交）
     };
 
     const GameState = { MENU:"MENU", CHASE:"CHASE", DASHING:"DASHING", SUCCESS:"SUCCESS", FAIL:"FAIL", COOLDOWN:"COOLDOWN" };
@@ -715,6 +717,7 @@
 
     const game = {
       state: GameState.MENU, difficulty: "normal", tuning: getDifficultyConfig("normal"),
+      isMobile: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1,
       lastTime: performance.now(), round: null, cooldownEndAt: 0, resultEndAt: 0,
       flash: { color: "rgba(255,255,255,0)", alpha: 0, type: "full" },
       message: { title: "准备练习", desc: "空格开始，E 键触发钢筋，Shift/右键向后看，P 暂停，H 隐藏 UI，O 设置", color: "#ffffff", until: 0 },
@@ -838,21 +841,25 @@
       game.forceRealNext = false;
       const isFeint = attackType === "feint";
       const isCharged = attackType === "charged";
+      const mobile = game.isMobile ? CONFIG.light.mobileMult : 1;
       // 蓄力刀：前摇更长，前半圈（举刀）占比更大；骗刀：整体动作放慢（feint.windupMult）
-      // 轻刀：固定不分难度，抬手快+下劈延长
+      // 轻刀：抬手快+下劈按难度分，手机端×0.9（触摸响应更快）
       const hitAt = baseTime + delay;
       let windupTime, windupAt, t0EndAt;
       if (isCharged) {
         windupTime = game.tuning.windupTime * CONFIG.charged.windupMult;
         windupAt = hitAt - windupTime;
-        t0EndAt = windupAt + windupTime * CONFIG.charged.chargedT0Ratio;
+        // 简单模式蓄力刀转刀(t1)更快一点
+        const t0r = game.difficulty === "easy" ? CONFIG.charged.easyT0Ratio : CONFIG.charged.chargedT0Ratio;
+        t0EndAt = windupAt + windupTime * t0r;
       } else if (isFeint) {
         windupTime = game.tuning.windupTime * CONFIG.feint.windupMult;
         windupAt = hitAt - windupTime;
         t0EndAt = windupAt + windupTime * CONFIG.t0Ratio;
       } else {
-        // 轻刀：固定前摇，不分难度；抬手88ms，下劈250ms
-        windupTime = CONFIG.light.raiseMs + CONFIG.light.swingMs;
+        // 轻刀：抬手88ms，下劈按难度分，手机端整体缩短
+        const swingMs = CONFIG.light.swingMs[game.difficulty] * mobile;
+        windupTime = CONFIG.light.raiseMs + swingMs;
         windupAt = hitAt - windupTime;
         t0EndAt = windupAt + CONFIG.light.raiseMs;
       }
