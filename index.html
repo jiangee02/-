@@ -85,6 +85,13 @@
       pointer-events: auto; transition: background 0.15s ease;
     }
     .icon-btn:hover { background: rgba(255,255,255,0.14); }
+    /* 暂停按钮：透明不突出（去掉黄色 emoji，用纯文本符号） */
+    .pause-btn { background: transparent !important; border-color: rgba(255,255,255,0.12) !important; }
+    .pause-btn:hover { background: rgba(255,255,255,0.06) !important; }
+    /* 难度行放进标题行时去掉自带的上间距 */
+    .title .difficulty-row { margin-top: 0; }
+    /* 统计面板的重置按钮缩小 */
+    .stats-panel .title button { padding: 3px 8px; font-size: 10px; border-radius: 6px; }
     .difficulty-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; pointer-events: auto; }
     button {
       appearance: none; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.08);
@@ -202,40 +209,32 @@
 
     /* ===== 响应式：小屏幕折叠/缩小（手机端竖屏/横屏不挡画面） ===== */
     @media (max-width: 800px) {
-      /* 顶栏纵向堆叠（不并排），紧凑 */
-      .topbar { flex-direction: column; gap: 4px; align-items: stretch; }
-      .topbar > .panel, .topbar > .stats-panel { width: 100%; max-width: 100%; margin-left: 0; }
+      /* 顶栏：左右并排但紧凑窄（fit-content），不占满全屏；左难度+暂停 / 右统计 */
+      .topbar { flex-direction: row; gap: 4px; justify-content: space-between; align-items: flex-start; }
+      .topbar > .panel { width: fit-content; max-width: 55%; margin: 0; flex: 0 0 auto; }
+      .topbar > .stats-panel { width: fit-content; max-width: 44%; margin: 0; flex: 0 0 auto; }
       body.ui-hidden .overlay > .topbar,
       body.ui-hidden .overlay > .menu-card,
       body.ui-hidden .overlay > .footer-controls { display: none !important; }
-      /* 手机端去掉 backdrop-filter 模糊（移动端开销大，拖慢首屏渲染） */
-      .panel, .stats-panel { padding: 5px 8px !important; border-radius: 10px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      /* 手机端去掉 backdrop-filter 模糊（移动端 GPU 开销大，拖慢首屏渲染） */
+      .panel, .stats-panel { padding: 5px 6px !important; border-radius: 10px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
       .panel .title { gap: 4px !important; margin-bottom: 2px !important; }
-      .panel h1 { font-size: clamp(11px, 3vw, 14px) !important; }
-      .stats-panel h2 { font-size: clamp(10px, 2.6vw, 12px) !important; margin: 0 0 4px !important; }
-      .stats-panel .grid { gap: 2px 6px !important; grid-template-columns: repeat(3, 1fr) !important; margin-top: 2px !important; }
-      .stats-panel .stat .label { font-size: 8px !important; }
-      .stats-panel .stat .value { font-size: clamp(10px, 2.4vw, 12px) !important; }
-      .difficulty-row { gap: 4px !important; margin-top: 4px !important; }
-      .difficulty-row button { padding: 4px 8px !important; font-size: clamp(10px, 2.4vw, 12px) !important; }
-      .difficulty-note { font-size: clamp(8px, 2vw, 10px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 3px !important; }
-
-      /* 游戏中：隐藏统计面板 + 难度行 + 难度说明 + 面板消息，只留标题+暂停窄条，彻底让出中央判定文字区 */
-      body.state-game .topbar > .stats-panel { display: none !important; }
-      body.state-game .topbar .difficulty-row,
-      body.state-game .topbar .difficulty-note,
-      body.state-game .topbar .panel-msg { display: none !important; }
-      body.state-game .topbar { align-items: flex-start !important; }
-      body.state-game .topbar > .panel { width: fit-content !important; max-width: 70% !important; }
-      /* 菜单中：两栏都显示，纵向堆叠（可看统计、设难度） */
-
+      .stats-panel .title { margin-bottom: 2px !important; gap: 4px !important; }
+      .stats-panel h2 { font-size: clamp(9px, 2.4vw, 11px) !important; margin: 0 !important; }
+      .stats-panel .title button { padding: 2px 6px !important; font-size: 9px !important; }
+      .stats-panel .grid { gap: 2px 4px !important; grid-template-columns: repeat(3, 1fr) !important; margin-top: 2px !important; }
+      .stats-panel .stat .label { font-size: 7px !important; }
+      .stats-panel .stat .value { font-size: clamp(9px, 2.2vw, 11px) !important; }
+      .difficulty-row { gap: 3px !important; margin-top: 0 !important; }
+      .difficulty-row button { padding: 3px 6px !important; font-size: clamp(9px, 2.2vw, 11px) !important; }
+      .difficulty-note { font-size: clamp(7px, 1.8vw, 9px) !important; min-height: 0 !important; line-height: 1.3 !important; margin-top: 2px !important; }
+      /* 图标按钮（暂停）：紧凑 */
+      .icon-btn { width: clamp(30px, 7vw, 36px) !important; height: clamp(30px, 7vw, 36px) !important; font-size: 13px !important; }
       /* 手机端：Shift 按钮放大到和触发一样大 */
       .look-btn {
         width: clamp(76px, 9vw, 108px) !important; height: clamp(76px, 9vw, 108px) !important;
         font-size: clamp(14px, 1.1vw, 18px) !important;
       }
-      /* 手机端：图标按钮放大，方便手指点 */
-      .icon-btn { width: clamp(40px, 10vw, 48px) !important; height: clamp(40px, 10vw, 48px) !important; font-size: 18px !important; }
       /* 手机端菜单：隐藏键盘操作说明，显示触摸按钮说明 */
       .menu-hint { display: none !important; }
       .menu-hint-mobile { display: block !important; margin-top: 14px !important; padding-top: 12px !important; }
@@ -264,14 +263,11 @@
       <div class="topbar">
         <div class="panel">
           <div class="title">
-            <h1>钢筋时机练习</h1>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button id="pauseBtn" class="icon-btn" type="button" title="暂停 (P)">⏸</button>
-              <span class="badge" id="stateBadge">状态：菜单</span>
-            </div>
+            <div class="difficulty-row" id="difficultyButtons"></div>
+            <button id="pauseBtn" class="icon-btn pause-btn" type="button" title="暂停">❚❚</button>
           </div>
+          <span class="badge" id="stateBadge">状态：菜单</span>
           <div class="panel-msg" id="panelMsg">准备练习</div>
-          <div class="difficulty-row" id="difficultyButtons"></div>
           <div class="difficulty-note" id="difficultyNote"></div>
         </div>
 
@@ -1737,7 +1733,7 @@
       ctx.fillText("已暂停", w / 2, h / 2 - Math.min(w, h) * 0.03);
       ctx.font = `600 ${Math.round(Math.min(w, h) * 0.032)}px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif`;
       ctx.fillStyle = "rgba(226, 232, 240, 0.85)";
-      ctx.fillText("按 P 继续训练", w / 2, h / 2 + Math.min(w, h) * 0.055);
+      ctx.fillText("点击屏幕继续", w / 2, h / 2 + Math.min(w, h) * 0.055);
       ctx.restore();
     }
 
@@ -1785,6 +1781,8 @@
       window.addEventListener("contextmenu", (e) => e.preventDefault());
       window.addEventListener("mousedown", (e) => { if (e.button === 2) { e.preventDefault(); game.mouseLookBack = true; syncLookBackState(); } });
       window.addEventListener("mouseup", (e) => { if (e.button === 2) { e.preventDefault(); game.mouseLookBack = false; syncLookBackState(); } });
+      // 暂停后点击游戏屏幕（canvas）即恢复，无需再按 P 或点暂停按钮
+      canvas.addEventListener("pointerdown", () => { if (game.paused) togglePause(); });
 
       ui.startBtn.addEventListener("click", startPractice);
       if (ui.restartBtn.addEventListener) ui.restartBtn.addEventListener("click", restartRoundOnly);
