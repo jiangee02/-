@@ -478,11 +478,11 @@
       // 骗刀动作放慢倍数（举刀+停顿+收回整体时长 ×3.6，hitAt 判定点不变；调大更慢）
       feint: { windupMult: 3.6 },
 
-      // 轻刀：抬手快(88ms)，下劈按难度分；手机端触摸响应更快，抬手70ms+下劈×0.78
-      light: { raiseMs: 88, raiseMobileMs: 70, swingMs: { easy: 195, normal: 220, hard: 210 }, mobileMult: 0.78 },
+      // 轻刀：抬手快(90ms)，下劈按难度分；手机端触摸响应更快，抬手80ms+下劈×0.6
+      light: { raiseMs: 90, raiseMobileMs: 80, swingMs: { easy: 220, normal: 270, hard: 250 }, mobileMult: 0.6 },
 
-      // 蓄力刀：举刀(旋转)更快、下劈(t1)不变；手机端 windupMult 再×mobileMult
-      charged: { windupMult: 1.88, lunge: 42, scaleBoost: 1.04, chargedT0Ratio: 0.76, easyT0Ratio: 0.85, mobileMult: 0.78 },
+      // 蓄力刀：桌面 windupMult 2.4，下劈(t1)固定130ms；手机端下劈155ms(慢一点)，整体×0.52
+      charged: { windupMult: 2.88, lunge: 42, scaleBoost: 1.04, t1Ms: 200, t1MobileMs: 200, mobileMult: 0.52 },
 
       // ===== 追逐声 / 钢筋黄条 =====
       chaseVolume: 0.45,     // 追逐循环正常音量
@@ -847,13 +847,12 @@
       const hitAt = baseTime + delay;
       let windupTime, windupAt, t0EndAt;
       if (isCharged) {
-        // 蓄力刀：手机端 windupMult × mobileMult（触摸响应更快）
+        // 蓄力刀：手机端 windupMult × mobileMult；下劈(t1)固定，手机端更慢
         const cMult = CONFIG.charged.windupMult * (game.isMobile ? CONFIG.charged.mobileMult : 1);
         windupTime = game.tuning.windupTime * cMult;
         windupAt = hitAt - windupTime;
-        // 简单模式蓄力刀转刀(t1)更快一点
-        const t0r = game.difficulty === "easy" ? CONFIG.charged.easyT0Ratio : CONFIG.charged.chargedT0Ratio;
-        t0EndAt = windupAt + windupTime * t0r;
+        const t1Ms = game.isMobile ? CONFIG.charged.t1MobileMs : CONFIG.charged.t1Ms;
+        t0EndAt = hitAt - t1Ms; // 下劈固定时长，举刀=总前摇-下劈
       } else if (isFeint) {
         windupTime = game.tuning.windupTime * CONFIG.feint.windupMult;
         windupAt = hitAt - windupTime;
