@@ -1450,7 +1450,7 @@
     /** 背景图 cover 铺满 + zoom 随步伐脉动；手机端缩放系数从 1.04 降到 1.0，多露背景 */
     function drawBgCover(img, alpha, zoom = 1) {
       if (alpha <= 0.01) return;
-      const baseCover = (game && game.isMobile) ? 1.0 : 1.04;
+      const baseCover = (game && game.isMobile) ? 0.8 : 1.04;
       const s = Math.max(canvas.width / img.width, canvas.height / img.height) * baseCover * zoom;
       const w = img.width * s, h = img.height * s;
       ctx.save();
