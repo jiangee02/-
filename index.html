@@ -501,7 +501,7 @@
         },
         hard: {
           label: "困难", attackDelayMin: 1500, attackDelayMax: 5000, windupTime: 180, feintChance: 0.30,
-          attackPool: ["light","light","feint","feint"], note: "轻刀和骗刀，难度较大。"
+          attackPool: ["light","light","feint","feint"], note: "只有轻刀和骗刀，难度较大。"
         }
       },
 
@@ -533,8 +533,8 @@
       },
 
       /* 【手动改这里】骗刀 Canvas 大字（屏幕中央，随机取一条，不分难度） */
-      feintBaitedTexts: ["不吃钢筋", "等着你呢", "防着你呢","骗你呢"], // 骗到钢筋（交钢被骗）
-      feintNoBaitTexts: ["有操作的！", "不吃压迫！", "大心脏！","这么稳！"    // 没骗到（看清骗刀没交）
+      feintBaitedTexts: ["不吃钢筋", "等着你呢", "防着你呢"], // 骗到钢筋（交钢被骗）
+      feintNoBaitTexts: ["有操作的", "不吃压迫", "大心脏！"]    // 没骗到（看清骗刀没交）
     };
 
     const GameState = { MENU:"MENU", CHASE:"CHASE", DASHING:"DASHING", SUCCESS:"SUCCESS", FAIL:"FAIL", COOLDOWN:"COOLDOWN" };
@@ -1208,12 +1208,14 @@
 
       game.weaponState = computeWeaponState(now);
       const sw = game.weaponState;
-      // 挥刀声提前到下劈开始前 ~120ms 起播（下劈动画只有 ~110ms，太晚播会刚起音就被命中淡出）
-      // 骗刀不播挥刀声
-      if (!game.round.swingPlayed && !game.round.feint && now >= game.round.t0EndAt - 120) {
-        game.round.swingPlayed = true;
-        swingAudioEl = playSfx(game.round.charged ? "swingCharged" : "swingLight", 1.0) || null;
-        if (!swingAudioEl) playSound("swing");
+      // 挥刀声：真刀提前到 t0EndAt-120ms 播；骗刀在举刀开始(windupAt)就播，配合举刀动作
+      if (!game.round.swingPlayed) {
+        const sfxName = game.round.charged ? "swingCharged" : "swingLight";
+        if (game.round.feint ? now >= game.round.windupAt : now >= game.round.t0EndAt - 120) {
+          game.round.swingPlayed = true;
+          swingAudioEl = playSfx(sfxName, 1.0) || null;
+          if (!swingAudioEl) playSound("swing");
+        }
       }
       if (sw.phase === "t1") {
         game.weaponTrail.push({ angle: sw.angle, t: now });
@@ -1445,10 +1447,11 @@
       ctx.restore();
     }
 
-    /** 背景图 cover 铺满（放大 4% 留视差余量 + zoom 随步伐脉动）+ 压暗去饱和融合暗色调。 */
+    /** 背景图 cover 铺满 + zoom 随步伐脉动；手机端缩放系数从 1.04 降到 1.0，多露背景 */
     function drawBgCover(img, alpha, zoom = 1) {
       if (alpha <= 0.01) return;
-      const s = Math.max(canvas.width / img.width, canvas.height / img.height) * 1.04 * zoom;
+      const baseCover = (game && game.isMobile) ? 1.0 : 1.04;
+      const s = Math.max(canvas.width / img.width, canvas.height / img.height) * baseCover * zoom;
       const w = img.width * s, h = img.height * s;
       ctx.save();
       ctx.globalAlpha = clamp(alpha, 0, 1);
