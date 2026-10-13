@@ -1447,17 +1447,34 @@
       ctx.restore();
     }
 
-    /** 背景图 cover 铺满 + zoom 随步伐脉动；手机端缩放系数从 1.04 降到 1.0，多露背景 */
+    /** 背景图：桌面 cover 铺满+放大4%；手机端 contain（完整显示），四周用渐变填充防黑边 */
     function drawBgCover(img, alpha, zoom = 1) {
       if (alpha <= 0.01) return;
-      const baseCover = (game && game.isMobile) ? 0.8 : 1.04;
-      const s = Math.max(canvas.width / img.width, canvas.height / img.height) * baseCover * zoom;
-      const w = img.width * s, h = img.height * s;
-      ctx.save();
-      ctx.globalAlpha = clamp(alpha, 0, 1);
-      ctx.filter = "brightness(0.72) saturate(0.9) contrast(1.04)"; // 压暗融合（调这里：太暗提 brightness）
-      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
-      ctx.restore();
+      const mobile = game && game.isMobile;
+      if (mobile) {
+        // 手机端：contain 模式（按小边缩放，完整显示图片）
+        const s = Math.min(canvas.width / img.width, canvas.height / img.height) * zoom;
+        const w = img.width * s, h = img.height * s;
+        const x = (canvas.width - w) / 2, y = (canvas.height - h) / 2;
+        // 四周填充渐变防黑边
+        const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        g.addColorStop(0, "#1a2230"); g.addColorStop(0.5, "#121826"); g.addColorStop(1, "#0d1320");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.globalAlpha = clamp(alpha, 0, 1);
+        ctx.filter = "brightness(0.72) saturate(0.9) contrast(1.04)";
+        ctx.drawImage(img, x, y, w, h);
+        ctx.restore();
+      } else {
+        // 桌面：cover 铺满 + 4% 放大留视差余量
+        const s = Math.max(canvas.width / img.width, canvas.height / img.height) * 1.04 * zoom;
+        const w = img.width * s, h = img.height * s;
+        ctx.save();
+        ctx.globalAlpha = clamp(alpha, 0, 1);
+        ctx.filter = "brightness(0.72) saturate(0.9) contrast(1.04)";
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+        ctx.restore();
+      }
     }
 
     /* ===== 屠夫：仅绘制身体（7.png 已含头部），无红框描边 ===== */
