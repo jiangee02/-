@@ -275,3 +275,8 @@ button.danger { background: rgba(251, 113, 133, 0.14); border-color: rgba(251, 1
 /* 手机端菜单触摸说明（默认隐藏，手机端显示） */
 .menu-hint-mobile { display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);
   font-size: clamp(11px, 0.85vw, 13px); color: rgba(255,255,255,0.6); line-height: 1.8; }
+/* 非官方声明：小字、弱化颜色，置于菜单卡片底部 */
+.menu-disclaimer {
+  margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: clamp(9px, 0.72vw, 11px); color: rgba(255,255,255,0.4); line-height: 1.7;
+}
