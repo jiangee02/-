@@ -102,13 +102,32 @@ function drawPauseOverlay() {
 }
 
 // ===== 主循环 =====
+// FPS 调试：地址栏加 ?fps=1 时左上角显示实时帧率（默认关闭，不影响正常游玩）
+const debugFps = /[?&]fps=1/.test(location.search);
+let fpsFrameCount = 0, fpsWindowStart = 0, fpsValue = 0;
+function drawFpsOverlay(now) {
+  if (!debugFps) return;
+  fpsFrameCount += 1;
+  if (!fpsWindowStart) fpsWindowStart = now;
+  if (now - fpsWindowStart >= 500) {
+    fpsValue = Math.round((fpsFrameCount * 1000) / (now - fpsWindowStart));
+    fpsFrameCount = 0; fpsWindowStart = now;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(8, 8, 118, 28);
+  ctx.font = '600 16px ui-monospace, Consolas, monospace';
+  ctx.fillStyle = fpsValue >= 55 ? "#4ade80" : (fpsValue >= 40 ? "#facc15" : "#f87171");
+  ctx.fillText(`${fpsValue} fps`, 18, 28);
+  ctx.restore();
+}
 function gameLoop(now) {
   if (game.paused) {
     if (!pauseOverlayDrawn) { drawPauseOverlay(); pauseOverlayDrawn = true; }
     requestAnimationFrame(gameLoop); return;
   }
   pauseOverlayDrawn = false;
-  updateGame(now); draw(); requestAnimationFrame(gameLoop);
+  updateGame(now); draw(); drawFpsOverlay(now); requestAnimationFrame(gameLoop);
 }
 
 // ===== UI 切换 / 设置 =====
