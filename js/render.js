@@ -10,6 +10,37 @@ function getSpeedMultiplier() {
   return 1;
 }
 
+/* ===== 静态滤镜离屏缓存 =====
+ * ctx.filter 在 Canvas 2D 里非常昂贵：每次使用都会对整张图跑一遍滤镜管线。
+ * 背景图/屠夫/手部每帧都用同一个固定滤镜，改为「首次使用时预渲染一次到离屏 canvas」，
+ * 之后每帧只做普通 drawImage —— 输出像素完全一致，但省掉每帧的滤镜开销。 */
+const _filterCache = {};
+function filteredSource(img, filter, key) {
+  if (!img) return null;
+  if (!filter || filter === "none") return img;
+  const hit = _filterCache[key];
+  if (hit && hit.src === img && hit.filter === filter) return hit.canvas;
+  const off = document.createElement("canvas");
+  off.width = img.naturalWidth || img.width;
+  off.height = img.naturalHeight || img.height;
+  const octx = off.getContext("2d");
+  octx.filter = filter;
+  octx.drawImage(img, 0, 0);
+  _filterCache[key] = { canvas: off, src: img, filter };
+  return off;
+}
+
+/* ===== 渐变缓存（vignette 暗角只与画布尺寸有关，无需每帧重建）===== */
+let _vigCache = { w: 0, h: 0, grad: null };
+function vignetteGradient() {
+  if (_vigCache.grad && _vigCache.w === canvas.width && _vigCache.h === canvas.height) return _vigCache.grad;
+  const w = canvas.width, h = canvas.height;
+  const g = ctx.createRadialGradient(w / 2, h * 0.42, h * 0.34, w / 2, h * 0.42, h * 0.95);
+  g.addColorStop(0, "rgba(10, 15, 24, 0)"); g.addColorStop(1, "rgba(10, 15, 24, 0.5)");
+  _vigCache = { w, h, grad: g };
+  return g;
+}
+
 // ===== 场景坐标（屠夫位置 / 头部摆动 / 地面）=====
 function getScenePositions(now) {
   const inMenu = game.state === GameState.MENU;
@@ -156,11 +187,8 @@ function drawBackground(now, scene) {
     ctx.beginPath(); ctx.ellipse(p.x, p.y, size * (lookingBack ? 2.0 : 1.6), size * 0.55, Math.atan2(p.vy, p.vx), 0, Math.PI * 2); ctx.fill();
   }
 
-  // 四周暗角：聚焦中心（屠夫与判定区），统一游戏暗色调
-  const vig = ctx.createRadialGradient(canvas.width / 2, canvas.height * 0.42, canvas.height * 0.34,
-                                       canvas.width / 2, canvas.height * 0.42, canvas.height * 0.95);
-  vig.addColorStop(0, "rgba(10, 15, 24, 0)"); vig.addColorStop(1, "rgba(10, 15, 24, 0.5)");
-  ctx.fillStyle = vig; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // 四周暗角：聚焦中心（屠夫与判定区），统一游戏暗色调（渐变按画布尺寸缓存，不每帧重建）
+  ctx.fillStyle = vignetteGradient(); ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 }
 
@@ -172,8 +200,9 @@ function drawBgCover(img, alpha, zoom = 1) {
   const w = img.width * s, h = img.height * s;
   ctx.save();
   ctx.globalAlpha = clamp(alpha, 0, 1);
-  ctx.filter = "brightness(0.72) saturate(0.9) contrast(1.04)";
-  ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+  // 滤镜改为离屏预渲染缓存：不再每帧对全屏图跑滤镜（这是最大的一处性能开销）
+  const src = filteredSource(img, "brightness(0.72) saturate(0.9) contrast(1.04)", "bg") || img;
+  ctx.drawImage(src, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
   ctx.restore();
 }
 
@@ -210,8 +239,9 @@ function drawKillerBody(bodyW, bodyH) {
   const asset = assets.killerBody;
   const dx = -bodyW / 2, dy = -bodyH / 2 + 10;
   if (asset && asset.loaded) {
-    ctx.save(); ctx.filter = "brightness(1.18) contrast(1.12)";
-    ctx.drawImage(asset.image, dx, dy, bodyW, bodyH); ctx.restore();
+    ctx.save();
+    const src = filteredSource(asset.image, "brightness(1.18) contrast(1.12)", "killer") || asset.image;
+    ctx.drawImage(src, dx, dy, bodyW, bodyH); ctx.restore();
   } else {
     ctx.fillStyle = "#312e81"; roundRect(ctx, dx, dy, bodyW, bodyH, 24); ctx.fill();
     ctx.strokeStyle = "#1e1b4b"; ctx.lineWidth = 13; ctx.lineCap = "round";
@@ -321,10 +351,10 @@ function drawHand(x, y, rot, glowing, dir, zScale) {
     const hw = a.handW * a.widthScale, hh = a.handH; // widthScale 只横向拉宽（调粗细）
     ctx.save();
     // 压暗去光泽：太亮太光滑的照片风手部图适配暗色游戏画面（调这里：arms.imgFilter）
-    ctx.filter = a.imgFilter;
+    const src = filteredSource(asset.image, a.imgFilter, "hands") || asset.image;
     if (dir < 0) ctx.scale(-1, 1);  // 左手镜像（右手手背图镜像后即左手）
     // 图片底部贴在锚点上方 liftY 处：liftY 调大 = 手上移
-    ctx.drawImage(asset.image, -hw / 2, -hh - a.liftY, hw, hh);
+    ctx.drawImage(src, -hw / 2, -hh - a.liftY, hw, hh);
     ctx.restore();
   } else if (asset && asset.failed) {
     // 仅加载失败才回退白色方块手；加载中（未成功也未失败）不画，避免刷新时 fallback 一闪而过
